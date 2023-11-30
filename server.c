@@ -128,7 +128,7 @@ int range(const char *date1, const char *date2, const char *betweenDate) {
 
 
 
-void handle_client_request(int client_socket, StockData stock_data_one[], StockData stock_data_two[]) {
+int handle_client_request(int client_socket, StockData stock_data_one[], StockData stock_data_two[]) {
     char buffer[BUFFER_SIZE];
     ssize_t received;
     
@@ -235,7 +235,7 @@ void handle_client_request(int client_socket, StockData stock_data_one[], StockD
         }
     }
     
-    close(client_socket);
+    return 1; //marks that it is done 
 }
 
 int main(int argc, char *argv[]) {
@@ -266,7 +266,6 @@ int main(int argc, char *argv[]) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(argv[3]));
     server_addr.sin_addr.s_addr = INADDR_ANY;
-
     if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         perror("Binding failed");
         exit(EXIT_FAILURE);
@@ -287,8 +286,14 @@ int main(int argc, char *argv[]) {
             perror("Acceptance failed");
             exit(EXIT_FAILURE);
         }
-        handle_client_request(client_socket, stock_data_one, stock_data_two);
+        //handle_client_request(client_socket, stock_data_one, stock_data_two);
+        if (handle_client_request(client_socket, stock_data_one, stock_data_two) == 1){
+            close(server_socket);
+            send_message(client_socket, "Quit");
+            break;
+        }
     }
+
 
     close(server_socket);
     return 0;

@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(argv[2]));
     inet_pton(AF_INET, argv[1], &server_addr.sin_addr);
+    int quit = 0;
 
     if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         perror("Connection failed");
@@ -46,12 +47,20 @@ int main(int argc, char *argv[]) {
 
         recv(client_socket, server_response, BUFFER_SIZE, 0);
         server_response[BUFFER_SIZE-1] = '\0';
-        
+
+
+        if(strcmp(server_response,"Quit") == 0){
+            printf("client closing\n");
+            quit = 1;
+            break;
+        }
         printf("%s\n", server_response);
         
         printf("> ");
     }
 
-    close(client_socket);
+    if (quit == 1){
+        close(client_socket);
+    }
     return 0;
 }
