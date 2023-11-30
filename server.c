@@ -159,6 +159,7 @@ int handle_client_request(int client_socket, StockData stock_data_one[], StockDa
             //if the date is not in the CSV then return unknown to the client
             if(price == 0.0){
                 send_message(client_socket, "Unknown"); 
+                break;
             }
             char price_str[20];
             snprintf(price_str, sizeof(price_str), "%.2f", price);
