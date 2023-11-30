@@ -51,7 +51,10 @@ void read_stock_data(const char *filename, StockData stock_data[]) {
         exit(EXIT_FAILURE);
     }
 
-    while (fgets(buffer, BUFFER_SIZE, file) != NULL && current_row < MAX_ROWS) {
+    //iterates throughout the csv
+    //gets the data from each row and initializes the attributes for the objects
+    //each element in the stock_data array is an object with each column as an attribute
+    while (fgets(buffer, BUFFER_SIZE, file) != NULL && current_row < MAX_ROWS) { 
         token = strtok(buffer, ",");
         strcpy(stock_data[current_row].date, token);
 
@@ -93,6 +96,38 @@ void send_message(int client_socket, const char *msg) {
     send(client_socket, msg, len, 0);
 }
 
+int range(const char *date1, const char *date2, const char *betweenDate) {
+    //printf("date1: %s date2: %s betweenDate: %s\n", date1, date2, betweenDate);
+
+    int year1, month1, day1, year2, month2, day2, yearBetween, monthBetween, dayBetween;
+
+    // Parse date1
+    sscanf(date1, "%d-%d-%d", &year1, &month1, &day1);
+
+    // Parse date2
+    sscanf(date2, "%d-%d-%d", &year2, &month2, &day2);
+
+    // Parse betweenDate
+    sscanf(betweenDate, "%d-%d-%d", &yearBetween, &monthBetween, &dayBetween);
+
+    // Compare dates
+    if (yearBetween > year1 && yearBetween < year2) {
+        return 1; // betweenDate is within the range
+    } else if (yearBetween == year1 && yearBetween == year2) {
+        if (monthBetween > month1 && monthBetween < month2) {
+            return 1; // betweenDate is within the range
+        } else if (monthBetween == month1 && monthBetween == month2) {
+            if (dayBetween >= day1 && dayBetween <= day2) {
+                return 1; // betweenDate is within the range
+            }
+        }
+    }
+
+    return 0; // betweenDate is not within the range
+}
+
+
+
 void handle_client_request(int client_socket, StockData stock_data_one[], StockData stock_data_two[]) {
     char buffer[BUFFER_SIZE];
     ssize_t received;
@@ -108,10 +143,10 @@ void handle_client_request(int client_socket, StockData stock_data_one[], StockD
         }
         else if (strncmp(buffer, "Prices", 6) == 0) {
             char stock_name[20], date[11];
-            sscanf(buffer, "%*s %s %s", stock_name, date);
+            //skips the first word price and puts the stock name and date into assigned variables
+            sscanf(buffer, "%*s %s %s", stock_name, date); 
 
-            double price = 0.0; // Replace with your logic to fetch the stock price
-            
+            double price = 0.0;
             // Search for the stock price in the provided stock data based on stock_name and date
             for (int i = 0; i < MAX_ROWS; i++) {
                 if (strcmp(stock_data_one[0].name, stock_name) == 0 && strcmp(stock_data_one[i].date, date) == 0) {
@@ -124,6 +159,7 @@ void handle_client_request(int client_socket, StockData stock_data_one[], StockD
             }
             char price_str[20];
             snprintf(price_str, sizeof(price_str), "%.2f", price);
+
             send_message(client_socket, price_str); // Send the stock price information back to the client
         }
         else if (strncmp(buffer, "MaxProfit", 9) == 0) {
@@ -131,7 +167,65 @@ void handle_client_request(int client_socket, StockData stock_data_one[], StockD
             // Extract stock name, start date, and end date
             // Calculate maximum profit and send it back to the client
             // For example:
-            send_message(client_socket, "25.00"); // Replace with actual profit
+            char stock_name[20], start_date[11], end_date[11];
+            double price = 0.0;
+            sscanf(buffer, "%*s %s %s %s", stock_name, start_date, end_date); 
+            //find the closing stock price for both the start_date and end_date 
+
+            double start_price = 3000.0; // Replace with your logic to fetch the stock price
+            double difference = 0.0;
+            //printf("stock name : %s stock array name: %s\n",stock_name, stock_data_one[0].name);
+            //printf("date in between: %s \n",stock_data_one[0].date);
+
+            //iterate through the assigned stock name array 
+            if (strcmp(stock_name,stock_data_one[0].name)==0){
+                for(int i = 0; i< MAX_ROWS; i++){
+                    //checks if the current date is in range 
+                    //printf("date in between: %s \n",stock_data_one[i].date);
+
+                    int check = range(start_date,end_date,stock_data_one[i].date);
+                    //printf("check : %d\n", check);
+                    if (check == 1){ 
+                        //printf("date in between: %s \n",stock_data_one[i].date);
+                        //if the current price is greater than the start price sub
+                        //printf("stockPriceInArr: %f startPrice: %f \n",stock_data_one[i].close,start_price);
+                        if (stock_data_one[i].close < start_price){
+                            start_price = stock_data_one[i].close;
+                        }
+                        if (difference < (stock_data_one[i].close - start_price)){
+                            difference = stock_data_one[i].close - start_price;
+                        }
+                    }
+                }
+            }
+            else{ //for stock array 2
+                for(int i = 0; i< MAX_ROWS; i++){
+                    //checks if the current date is in range 
+                    //printf("date in between: %s \n",stock_data_one[i].date);
+
+                    int check = range(start_date,end_date,stock_data_two[i].date);
+                    //printf("check : %d\n", check);
+                    if (check == 1){ 
+                        //printf("date in between: %s \n",stock_data_one[i].date);
+                        //if the current price is greater than the start price sub
+                        //printf("stockPriceInArr: %f startPrice: %f \n",stock_data_one[i].close,start_price);
+                        if (stock_data_two[i].close < start_price){
+                            start_price = stock_data_two[i].close;
+                        }
+                        if (difference < (stock_data_two[i].close - start_price)){
+                            difference = stock_data_two[i].close - start_price;
+                        }
+                    }
+                }
+            }
+
+            //printf("startPrice: %f endPrice: %f\n", start_price, end_price);
+            //double difference = end_price - start_price;
+            char price_str[20];
+            snprintf(price_str, sizeof(price_str), "%.2f", difference);
+
+            //get the difference
+            send_message(client_socket, price_str); // Replace with actual profit
         }
         else if (strncmp(buffer, "quit", 4) == 0) {
             break;
@@ -158,7 +252,8 @@ int main(int argc, char *argv[]) {
     read_stock_data(argv[2], stock_data_two);
 
     int server_socket, client_socket;
-    struct sockaddr_in server_addr, client_addr;
+    //creates instances of sockaddr_in and putting them into the server and client 
+    struct sockaddr_in server_addr, client_addr; 
     socklen_t addr_size = sizeof(client_addr);
 
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -185,6 +280,8 @@ int main(int argc, char *argv[]) {
     printf("Server started\n");
 
     while (1) {
+        //establishes a connection to the client 
+        //server socket listens for incoming connection requests  
         client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &addr_size);
         if (client_socket < 0) {
             perror("Acceptance failed");

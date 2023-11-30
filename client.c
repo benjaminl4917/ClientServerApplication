@@ -37,10 +37,17 @@ int main(int argc, char *argv[]) {
     while (fgets(buffer, BUFFER_SIZE, stdin) != NULL) {
         // Send user input to the server
         send(client_socket, buffer, strlen(buffer), 0);
-        
+
         // Receive response from the server
-        recv(client_socket, buffer, BUFFER_SIZE, 0);
-        printf("%s\n", buffer);
+        //have a dummy variable seperate from the input bugger
+        char server_response[BUFFER_SIZE];
+        //intialize the buffer to all 0's 
+        memset(server_response, 0, BUFFER_SIZE); 
+
+        recv(client_socket, server_response, BUFFER_SIZE, 0);
+        server_response[BUFFER_SIZE-1] = '\0';
+        
+        printf("%s\n", server_response);
         
         printf("> ");
     }
