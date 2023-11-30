@@ -127,7 +127,6 @@ int range(const char *date1, const char *date2, const char *betweenDate) {
 }
 
 
-
 int handle_client_request(int client_socket, StockData stock_data_one[], StockData stock_data_two[]) {
     char buffer[BUFFER_SIZE];
     ssize_t received;
@@ -157,6 +156,10 @@ int handle_client_request(int client_socket, StockData stock_data_one[], StockDa
                     break;
                 }
             }
+            //if the date is not in the CSV then return unknown to the client
+            if(price == 0.0){
+                send_message(client_socket, "Unknown"); 
+            }
             char price_str[20];
             snprintf(price_str, sizeof(price_str), "%.2f", price);
 
@@ -168,7 +171,10 @@ int handle_client_request(int client_socket, StockData stock_data_one[], StockDa
             // Calculate maximum profit and send it back to the client
             // For example:
             char stock_name[20], start_date[11], end_date[11];
-            double price = 0.0;
+
+            //makes sure that the start_date is less than the end_date
+
+
             sscanf(buffer, "%*s %s %s %s", stock_name, start_date, end_date); 
             //find the closing stock price for both the start_date and end_date 
 
@@ -219,6 +225,10 @@ int handle_client_request(int client_socket, StockData stock_data_one[], StockDa
                 }
             }
 
+            //if the date is not in the CSV then return unknown to the client
+            if(start_price == 3000.0){
+                send_message(client_socket, "Unknown"); 
+            }
             //printf("startPrice: %f endPrice: %f\n", start_price, end_price);
             //double difference = end_price - start_price;
             char price_str[20];
